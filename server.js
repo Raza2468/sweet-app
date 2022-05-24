@@ -15,7 +15,8 @@ var { getUser, tweet, order, userProduct } = require("./dberor/models")
 // var serviceaccount = require("./firebase/firebase.json")
 var ServerSecretKey = process.env.SECRET || "123";
 
-
+// ==========================================>Server /////
+var PORT = process.env.PORT || 3001
 let appxml = express()
 
 var server = http.createServer(appxml);
@@ -655,8 +656,7 @@ appxml.get('/AllDataStatusOrderCancel', (req, res, next) => {
 
 
 
-// ==========================================>Server /////
-var PORT = process.env.PORT || 3001
+
 
 
 
