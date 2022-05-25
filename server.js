@@ -4,36 +4,37 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var cors = require("cors");
 var morgan = require("morgan");
-var jwt = require('jsonwebtoken'); // https://github.com/auth0/node-jsonwebtoken
-//is JWT secure? https://stackoverflow.com/questions/27301557/if-you-can-decode-jwt-how-are-they-secure
+var jwt = require('jsonwebtoken'); // https://github.com/auth0/node-jsonwebtoken  //is JWT secure? https://stackoverflow.com/questions/27301557/if-you-can-decode-jwt-how-are-they-secure
 var path = require("path")
 var authRoutes = require("./routes/auth");
-var { ServerSecretKey } = require("./core/index")
+var { ServerSecretKey,PORT } = require("./core/index")
 var socketIo = require("socket.io");
 var http = require("http");
 var { getUser, tweet, order, userProduct } = require("./dberor/models")
-// var serviceaccount = require("./firebase/firebase.json")
 var ServerSecretKey = process.env.SECRET || "123";
+// var serviceaccount = require("./firebase/firebase.json")
+
+
 
 // ==========================================>Server /////
-var PORT = process.env.PORT || 3001
-let appxml = express()
 
-var server = http.createServer(appxml);
-// var io = socketIo(server, { cors: { origin: "*", methods: "*", } });
+
+const app = express()
+var server = http.createServer(app);
 
 var io = socketIo(server, {
-    cors: ["http://localhost:3000", 'https://ecommerce-sweet-app.herokuapp.com/']
+    cors: ["http://localhost:3000", 'https://sweet-server.herokuapp.com/']
 });
-// https://ecommerce-sweet-app.herokuapp.com/
-appxml.use(bodyParser.json());
-appxml.use(cookieParser());
-appxml.use(cors({
-    origin: ["http://localhost:3000", 'https://ecommerce-sweet-app.herokuapp.com/'],
-    // origin: '*',
+// var io = socketIo(server, { cors: { origin: "*", methods: "*", } });
+
+
+app.use(bodyParser.json());
+app.use(cookieParser());
+app.use(cors({
+    origin: ["http://localhost:3000", 'https://sweet-server.herokuapp.com/'],
     credentials: true
 }));
-appxml.use(morgan('dev'));
+app.use(morgan('dev'));
 
 
 // Firebase bucket
@@ -68,13 +69,13 @@ const bucket = admin.storage().bucket("gs://firestore-28544.appspot.com");
 
 
 // ===============
-// appxml.use(cors());
-// appxml.use(bodyParser.urlencoded({ extended: true }));
+// app.use(cors());
+// app.use(bodyParser.urlencoded({ extended: true }));
 
-appxml.use("/", express.static(path.resolve(path.join(__dirname, "client/build"))));
+app.use("/", express.static(path.resolve(path.join(__dirname, "client/build"))));
 
 // =========================>
-appxml.use("/auth", authRoutes)
+app.use("/auth", authRoutes)
 
 
 // =========================>
@@ -83,8 +84,8 @@ appxml.use("/auth", authRoutes)
 if (process.env.NODE_ENV === "production") {
 
     // set static folder
-    appxml.use(express.static("client/build"))
-    appxml.get('*', (req, res) => {
+    app.use(express.static("client/build"))
+    app.get('*', (req, res) => {
         res.sendFile(path.resolve(__dirname, 'client', 'build', 'index.html'))
     })
 
@@ -92,7 +93,7 @@ if (process.env.NODE_ENV === "production") {
 
 // =========================>
 
-appxml.use(function (req, res, next) {
+app.use(function (req, res, next) {
 
     // console.log("req.cookies: ", req.cookies);
     if (!req.cookies.jToken) {
@@ -139,7 +140,7 @@ appxml.use(function (req, res, next) {
 
 
 // ==========================================>Start Get Profile /////
-appxml.get("/getProfile", upload.any(), (req, res, next) => {
+app.get("/getProfile", upload.any(), (req, res, next) => {
     console.log("my tweets user=>", req.body);
     getUser.findById(req.body.jToken.id, 'name email role createdOn', (err, doc) => {
         console.log("ya kia han dekhna han", req.body.jToken.id)
@@ -159,7 +160,7 @@ appxml.get("/getProfile", upload.any(), (req, res, next) => {
 
 // ADD  Product
 
-appxml.post("/profilePOST", upload.any(), (req, res, next) => {
+app.post("/profilePOST", upload.any(), (req, res, next) => {
     console.log(req.body.tweet)
     console.log("req body of tweet ", req.body);
     // if (!req.body.formData) {
@@ -226,7 +227,7 @@ appxml.post("/profilePOST", upload.any(), (req, res, next) => {
 
 
 
-appxml.get('/realtimechat', upload.any(), (req, res, next) => {
+app.get('/realtimechat', upload.any(), (req, res, next) => {
 
     tweet.find({}, (err, data) => {
         if (!err) {
@@ -243,7 +244,7 @@ appxml.get('/realtimechat', upload.any(), (req, res, next) => {
     })
 });
 //  {/*  ////////////////////////////////////// UserProductAll */}
-appxml.post("/userProduct", upload.any(), (req, res, next) => {
+app.post("/userProduct", upload.any(), (req, res, next) => {
     console.log(req.body.tweet)
     console.log("req body of tweet ", req.body);
     // if (!req.body.formData) {
@@ -304,7 +305,7 @@ appxml.post("/userProduct", upload.any(), (req, res, next) => {
 
 
 
-appxml.get('/userProductAll', upload.any(), (req, res, next) => {
+app.get('/userProductAll', upload.any(), (req, res, next) => {
 
     userProduct.find({}, (err, data) => {
         if (!err) {
@@ -325,7 +326,7 @@ appxml.get('/userProductAll', upload.any(), (req, res, next) => {
 
 //  {/*  ////////////////////////////////////// DeletCart */}
 
-appxml.post('/deleteCart', (req, res, next) => {
+app.post('/deleteCart', (req, res, next) => {
     if (!req.body._id) {
         res.status(403).send(
             `please send email and passwod in json body.
@@ -347,7 +348,7 @@ appxml.post('/deleteCart', (req, res, next) => {
 
 
 //  {/*  ////////////////////////////////////// UserDelletAllCart */}
-appxml.post('/UserDeletAllCart', (req, res, next) => {
+app.post('/UserDeletAllCart', (req, res, next) => {
     if (!req.body._id) {
         res.status(403).send(
             `please send email and passwod in json body.
@@ -371,7 +372,7 @@ appxml.post('/UserDeletAllCart', (req, res, next) => {
 
 //  Firebase Imag Upload
 
-appxml.post("/upload", upload.any(), (req, res, next) => {  // never use upload.single. see https://github.com/expressjs/multer/issues/799#issuecomment-586526877
+app.post("/upload", upload.any(), (req, res, next) => {  // never use upload.single. see https://github.com/expressjs/multer/issues/799#issuecomment-586526877
 
     bucket.upload(
         req.files[0].path,
@@ -403,7 +404,7 @@ appxml.post("/upload", upload.any(), (req, res, next) => {  // never use upload.
 
 // ==========================================>Create Order OR Order Is Review  /////
 
-appxml.post("/order", upload.any(), (req, res, next) => {
+app.post("/order", upload.any(), (req, res, next) => {
     // console.log(req.body.Order)
     console.log("req body of Order ", req.body);
     // if (!req.body.formData) {
@@ -498,7 +499,7 @@ io.on("connection", function (socket) {
 });
 // ==========================================>AllOrder /////
 
-appxml.get('/AllOrder', upload.any(), (req, res, next) => {
+app.get('/AllOrder', upload.any(), (req, res, next) => {
 
     order.find({}, (err, data) => {
         if (!err) {
@@ -520,7 +521,7 @@ appxml.get('/AllOrder', upload.any(), (req, res, next) => {
 
 // ==========================================>OrderAccepted /////
 
-appxml.post('/OrderAccepted', (req, res, next) => {
+app.post('/OrderAccepted', (req, res, next) => {
 
     order.findById({ _id: req.body.id },
         (err, data) => {
@@ -555,7 +556,7 @@ appxml.post('/OrderAccepted', (req, res, next) => {
 
 // ==========================================>OrderCancel /////
 
-appxml.post('/OrderCancel', (req, res, next) => {
+app.post('/OrderCancel', (req, res, next) => {
 
     order.findById({ _id: req.body.id },
         (err, data) => {
@@ -589,7 +590,7 @@ appxml.post('/OrderCancel', (req, res, next) => {
 
 // ==========================================>AllDataStatasISReview /////
 
-appxml.get('/AllDataStatusIsReview', (req, res, next) => {
+app.get('/AllDataStatusIsReview', (req, res, next) => {
 
     order.find({ status: "Is Review" }, (err, data) => {
         if (!err) {
@@ -611,7 +612,7 @@ appxml.get('/AllDataStatusIsReview', (req, res, next) => {
 
 // ==========================================>AllDataStatusOrderAccepted /////
 
-appxml.get('/AllDataStatusOrderAccepted', (req, res, next) => {
+app.get('/AllDataStatusOrderAccepted', (req, res, next) => {
 
     order.find({ status: "accepted" }, (err, data) => {
         if (!err) {
@@ -634,7 +635,7 @@ appxml.get('/AllDataStatusOrderAccepted', (req, res, next) => {
 
 // ==========================================>AllDataStatusOrderCancel /////
 
-appxml.get('/AllDataStatusOrderCancel', (req, res, next) => {
+app.get('/AllDataStatusOrderCancel', (req, res, next) => {
 
     order.find({ status: "Order Cancelled" }, (err, data) => {
         if (!err) {
@@ -677,7 +678,7 @@ appxml.get('/AllDataStatusOrderCancel', (req, res, next) => {
 
 
 server.listen(PORT, () => {
-    console.log("chal gya hai server", PORT)
+    console.log("Start Server ==> " +`http://localhost:${PORT}`)
 })
 // ==========================================>Server End/////
 

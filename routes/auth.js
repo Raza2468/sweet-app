@@ -5,16 +5,13 @@ var { ServerSecretKey } = require("../core/index");
 var postmark = require('postmark')
 var client = new postmark.Client("fa2f6eae-eaa6-4389-98f0-002e6fc5b900");
 // var client = new postmark.Client("ENTER YOUR POSTMARK TOKEN");
-
 var { getUser, otpModel, tweet } = require("../dberor/models");
-// console.log("getUser: ", getUser)
-// console.log("getUsertext: ", tweet)
+var appAuth = express.Router();
 
-var appxml = express.Router();
-// var ServerSecretKey = process.env.SECRET || "123";
-// ==========================================>$$ /////
 
-appxml.post("/signup", (req, res, next) => {
+
+
+appAuth.post("/signup", (req, res, next) => {
 
     if (!req.body.name || !req.body.email || !req.body.password) {
 
@@ -71,7 +68,7 @@ appxml.post("/signup", (req, res, next) => {
 // ==========================================>$$ /////
 
 
-appxml.post('/login', (req, res, next) => {
+appAuth.post('/login', (req, res, next) => {
     if (!req.body.email || !req.body.password) {
         res.status(403).send(
             `please send email and passwod in json body.
@@ -138,7 +135,7 @@ appxml.post('/login', (req, res, next) => {
 
 
 // =================/forget-password
-appxml.post('/forget-password', (req, res, next) => {
+appAuth.post('/forget-password', (req, res, next) => {
 
     if (!req.body.email) {
         res.status(403).send(`
@@ -194,7 +191,7 @@ appxml.post('/forget-password', (req, res, next) => {
 
 
 // =================/forget-password-step-2
-appxml.post('/forget-password-step-2', (req, res, next) => {
+appAuth.post('/forget-password-step-2', (req, res, next) => {
     if (!req.body.email && !req.body.otp && !req.body.newPassword) {
         res.status(403).send(`
             please send email & otp in json body.
@@ -263,7 +260,7 @@ appxml.post('/forget-password-step-2', (req, res, next) => {
 
 // =============>/logout
 
-appxml.post("/logout", (req, res, next) => {
+appAuth.post("/logout", (req, res, next) => {
     res.cookie("jToken", "", {
         maxAge: 86_400_000,
         httpOnly: true,
@@ -277,4 +274,4 @@ function getRandomArbitrary(min, max) {
 }
 
 // =======================export
-module.exports = appxml;
+module.exports = appAuth;
